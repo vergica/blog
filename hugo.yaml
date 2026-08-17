@@ -1,0 +1,121 @@
+baseURL: "https://northvision.cn"
+title: "梅岭随记"
+theme: "PaperMod"
+languageCode: "zh-CN"
+defaultContentLanguage: "zh"
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+paginate: 10
+hasCJKLanguage: true
+
+minify:
+  disableXML: true
+  minifyOutput: true
+
+params:
+  env: production
+  title: "梅岭随记"
+  description: "个人随笔、思考与记录"
+  keywords: [Blog, Portfolio, 随笔, 日记, 梅岭]
+  author: "十布"
+  defaultTheme: auto
+  disableThemeToggle: false
+  ShowShareButtons: false
+  ShowReadingTime: true
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowCodeCopyButtons: true
+  ShowWordCount: true
+  ShowRssButtonInSectionTermList: true
+  UseHugoToc: true
+  disableSpecial1stPost: false
+  displayFullLangName: true
+  comments: false
+  images: ["images/og-image.png"]
+
+  profileMode:
+    enabled: true
+    title: "梅岭随记"
+    subtitle: "温一壶月光下酒 🍶"
+    imageUrl: ""
+    imageWidth: 120
+    imageHeight: 120
+    buttons:
+      - name: 📝 文章
+        url: "/posts"
+      - name: 📖 关于
+        url: "/about"
+
+  socialIcons:
+    - name: github
+      url: "https://github.com/vergica"
+    - name: email
+      url: "mailto:2770295960@qq.com"
+
+  assets:
+    disableHLJS: true
+    disableFingerprinting: true
+
+  label:
+    text: "梅岭随记"
+    icon: ""
+    iconHeight: 35
+
+menu:
+  main:
+    - identifier: posts
+      name: 文章
+      url: /posts/
+      weight: 1
+    - identifier: tags
+      name: 标签
+      url: /tags/
+      weight: 2
+    - identifier: archives
+      name: 归档
+      url: /archives/
+      weight: 3
+    - identifier: search
+      name: 搜索
+      url: /search/
+      weight: 4
+    - identifier: about
+      name: 关于
+      url: /about/
+      weight: 5
+
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
+    extensions:
+      passthrough:
+        enable: true
+        delimiters:
+          block:
+            - - '\['
+              - '\]'
+            - - '$$'
+              - '$$'
+          inline:
+            - - '\('
+              - '\)'
+            - - '$'
+              - '$'
+      typographer:
+        enable: false
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+  section:
+    - HTML
+    - RSS
+    - JSON
+
+taxonomies:
+  tag: tags
