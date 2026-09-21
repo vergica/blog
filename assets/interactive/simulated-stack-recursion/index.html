@@ -4,58 +4,100 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>模拟栈实现组合型枚举 · 交互讲解</title>
+<script>
+// 与 PaperMod 同步:读 localStorage["pref-theme"],无则跟随系统(prefers-color-scheme)
+(function () {
+  var t = localStorage.getItem("pref-theme");
+  if (t === "dark" || t === "light") {
+    document.documentElement.dataset.theme = t;
+  } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    document.documentElement.dataset.theme = "dark";
+  }
+})();
+</script>
 <style>
+:root {
+  --bg:#ffffff; --text:#1f2937; --muted:#6b7280;
+  --panel:#f6f8fa; --border:#e5e7eb;
+  --frame:#f1f5f9; --frame-edge:#cbd5e1; --frame-top-bg:#fef3c7;
+  --accent:#b45309; --accent-strong:#d97706;
+  --pre-bg:#f8fafc; --pre-border:#e2e8f0;
+  --code-bg:#f3f4f6; --code-text:#0f766e;
+  --btn-bg:#e5e7eb; --btn-border:#cbd5e1; --btn-hover:#d1d5db;
+  --thumb-bg:#d97706; --track:#e2e8f0; --table-th:#f1f5f9;
+  --fresh:#b45309; --play:#0369a1;
+}
+html[data-theme="dark"] {
+  --bg:#0f172a; --text:#e2e8f0; --muted:#94a3b8;
+  --panel:#1e293b; --border:#334155;
+  --frame:#334155; --frame-edge:#475569; --frame-top-bg:#3e4a63;
+  --accent:#fbbf24; --accent-strong:#f59e0b;
+  --pre-bg:#0b1120; --pre-border:#334155;
+  --code-bg:#1e293b; --code-text:#7dd3fc;
+  --btn-bg:#334155; --btn-border:#475569; --btn-hover:#475569;
+  --thumb-bg:#fbbf24; --track:#334155; --table-th:#334155;
+  --fresh:#fbbf24; --play:#0e7490;
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background:#ffffff; color:#1f2937; font-family:"WenQuanYi Zen Hei","PingFang SC","Microsoft YaHei",sans-serif; padding:18px; line-height:1.7; }
+body { background:var(--bg); color:var(--text); font-family:"WenQuanYi Zen Hei","PingFang SC","Microsoft YaHei",sans-serif; padding:18px; line-height:1.7; }
+.topbar { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+#themeBtn { font-size:18px; line-height:1; padding:6px 14px; }
 h1 { font-size:26px; margin:10px 0 4px; }
-.sub { color:#6b7280; font-size:14px; margin-bottom:18px; }
-h2 { font-size:20px; margin:30px 0 10px; color:#b45309; border-left:4px solid #b45309; padding-left:10px; }
-h3 { font-size:16px; margin:12px 0 6px; color:#111827; }
+.postmeta { color:var(--muted); font-size:13px; margin:2px 0 14px; }
+.postmeta a { color:var(--accent); text-decoration:none; margin-right:8px; }
+.postmeta a:hover { text-decoration:underline; }
+.sub { color:var(--muted); font-size:14px; margin-bottom:18px; }
+h2 { font-size:20px; margin:30px 0 10px; color:var(--accent); border-left:4px solid var(--accent); padding-left:10px; }
+h3 { font-size:16px; margin:12px 0 6px; color:var(--text); }
 p { margin:8px 0; }
-code { background:#f3f4f6; padding:1px 6px; border-radius:5px; color:#0f766e; font-size:0.92em; }
-.card { background:#f6f8fa; border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px; margin:12px 0; }
-pre { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 12px; overflow-x:auto; font-size:13.5px; color:#334155; }
+code { background:var(--code-bg); padding:1px 6px; border-radius:5px; color:var(--code-text); font-size:0.92em; }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px 16px; margin:12px 0; }
+pre { background:var(--pre-bg); border:1px solid var(--pre-border); border-radius:8px; padding:10px 12px; overflow-x:auto; font-size:13.5px; color:var(--text); }
 table { border-collapse:collapse; width:100%; margin:8px 0; font-size:14px; }
-td, th { border:1px solid #e5e7eb; padding:6px 9px; text-align:left; vertical-align:top; }
-th { background:#f1f5f9; }
+td, th { border:1px solid var(--border); padding:6px 9px; text-align:left; vertical-align:top; }
+th { background:var(--table-th); }
 /* ---- 播放器 ---- */
 .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
-button { background:#e5e7eb; color:#1f2937; border:1px solid #cbd5e1; border-radius:8px; padding:8px 14px; font-size:14px; cursor:pointer; }
-button:hover { background:#d1d5db; }
+button { background:var(--btn-bg); color:var(--text); border:1px solid var(--btn-border); border-radius:8px; padding:8px 14px; font-size:14px; cursor:pointer; }
+button:hover { background:var(--btn-hover); }
 button:disabled { opacity:0.4; cursor:default; }
-#btnPlay { background:#0369a1; border-color:#0284c7; color:#fff; }
-#progress { color:#b45309; font-weight:bold; margin-left:6px; }
-#slider { flex:1; min-width:120px; -webkit-appearance:none; appearance:none; height:8px; border-radius:4px; background:#e2e8f0; outline:none; }
-#slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:#d97706; cursor:pointer; border:2px solid #ffffff; }
-#slider::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:#d97706; cursor:pointer; border:2px solid #ffffff; }
+#btnPlay { background:var(--play); border-color:var(--play); color:#fff; }
+#progress { color:var(--accent); font-weight:bold; margin-left:6px; }
+#slider { flex:1; min-width:120px; -webkit-appearance:none; appearance:none; height:8px; border-radius:4px; background:var(--track); outline:none; }
+#slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:var(--thumb-bg); cursor:pointer; border:2px solid var(--bg); }
+#slider::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--thumb-bg); cursor:pointer; border:2px solid var(--bg); }
 .stage { display:flex; gap:12px; flex-wrap:wrap; }
-.panel { background:#f6f8fa; border:1px solid #e5e7eb; border-radius:12px; padding:12px; flex:1; min-width:220px; }
-.panel-title { color:#6b7280; font-size:13px; margin-bottom:8px; }
+.panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:12px; flex:1; min-width:220px; }
+.panel-title { color:var(--muted); font-size:13px; margin-bottom:8px; }
 #stackPanel { flex:2; min-width:300px; }
 #stackBox { display:flex; flex-direction:column; gap:6px; }
-.frame { background:#f1f5f9; border:2px solid #cbd5e1; border-radius:8px; padding:6px 10px; }
-.frame.top { border:3px solid #f59e0b; background:#fef3c7; }
-.fname { font-size:12px; color:#475569; margin-bottom:3px; font-weight:bold; }
+.frame { background:var(--frame); border:2px solid var(--frame-edge); border-radius:8px; padding:6px 10px; }
+.frame.top { border:3px solid #f59e0b; background:var(--frame-top-bg); }
+.fname { font-size:12px; color:var(--text); margin-bottom:3px; font-weight:bold; }
 .frow { display:flex; gap:8px; flex-wrap:wrap; font-size:13.5px; }
 .fcell { padding:2px 8px; border-radius:6px; }
 .fcell.x { background:#2563eb; }
 .fcell.r { background:#d97706; }
 .fcell.o { background:#94a3b8; }
-.addr { font-size:26px; } .addr b { color:#d97706; font-size:32px; }
-.hint { color:#6b7280; font-size:12.5px; margin-top:4px; }
+.addr { font-size:26px; } .addr b { color:var(--thumb-bg); font-size:32px; }
+.hint { color:var(--muted); font-size:12.5px; margin-top:4px; }
 .x { margin-top:8px; font-size:14px; }
 .chip { display:inline-block; background:#16a34a; color:#fff; border-radius:8px; padding:3px 10px; margin:2px; font-size:15px; font-weight:bold; }
 .outrow { font-size:14px; padding:2px 0; }
-.outrow.fresh { color:#b45309; font-weight:bold; }
-.empty { color:#64748b; }
-.actionbar { margin-top:12px; display:flex; gap:10px; align-items:center; background:#f6f8fa; border:1px solid #e5e7eb; border-radius:12px; padding:10px 14px; }
+.outrow.fresh { color:var(--fresh); font-weight:bold; }
+.empty { color:var(--muted); }
+.actionbar { margin-top:12px; display:flex; gap:10px; align-items:center; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 14px; }
 .tag { color:#ffffff; font-weight:bold; border-radius:6px; padding:3px 10px; font-size:13px; white-space:nowrap; }
 #actText { font-size:15.5px; }
 </style>
 </head>
 <body>
 
+<div class="topbar">
 <h1>模拟栈实现组合型枚举 —— 交互式讲解</h1>
+<button id="themeBtn" onclick="toggleTheme()" title="切换浅色/深色"></button>
+</div>
+<!--POSTTAGS-->
 <p class="sub">题源:《算法竞赛进阶指南》(AcWing 93 风格) · 演示参数 n=4, m=2 · 共 6 个组合</p>
 
 <h2>一、这个程序要干什么</h2>
@@ -315,11 +357,23 @@ function togglePlay() {
     }, 1300);
   }
 }
+// 主题切换:与 PaperMod 共用 localStorage["pref-theme"]
+function applyThemeBtn() {
+  var b = document.getElementById("themeBtn");
+  if (b) b.textContent = document.documentElement.dataset.theme === "dark" ? "☀️" : "🌙";
+}
+function toggleTheme() {
+  var next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem("pref-theme", next);
+  applyThemeBtn();
+}
 document.addEventListener("keydown", e => {
   if (e.key === "ArrowRight") step(1);
   if (e.key === "ArrowLeft") step(-1);
 });
 render();
+applyThemeBtn();
 </script>
 
 </body>

@@ -1,1 +1,7 @@
-{{ readFile "assets/interactive/simulated-stack-recursion/index.html" | safeHTML }}
+{{- $html := readFile "assets/interactive/simulated-stack-recursion/index.html" -}}
+{{- $tags := slice -}}
+{{- range .Params.tags -}}
+  {{- $tags = $tags | append (printf "<a href=\"/tags/%s/\">#%s</a>" . .) -}}
+{{- end -}}
+{{- $meta := printf "<div class=\"postmeta\">发布时间: %s · 标签: %s</div>" (.Date.Format "2006-01-02") (delimit $tags " ") -}}
+{{- replace $html "<!--POSTTAGS-->" $meta | safeHTML -}}
