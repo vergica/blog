@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模拟栈实现组合型枚举 · 交互讲解</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background:#0f172a; color:#e2e8f0; font-family:"WenQuanYi Zen Hei","PingFang SC","Microsoft YaHei",sans-serif; padding:18px; line-height:1.7; }
+h1 { font-size:26px; margin:10px 0 4px; }
+.sub { color:#94a3b8; font-size:14px; margin-bottom:18px; }
+h2 { font-size:20px; margin:30px 0 10px; color:#fbbf24; border-left:4px solid #fbbf24; padding-left:10px; }
+h3 { font-size:16px; margin:12px 0 6px; color:#a5b4fc; }
+p { margin:8px 0; }
+code { background:#1e293b; padding:1px 6px; border-radius:5px; color:#7dd3fc; font-size:0.92em; }
+.card { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:14px 16px; margin:12px 0; }
+pre { background:#0b1120; border:1px solid #334155; border-radius:8px; padding:10px 12px; overflow-x:auto; font-size:13.5px; color:#cbd5e1; }
+table { border-collapse:collapse; width:100%; margin:8px 0; font-size:14px; }
+td, th { border:1px solid #334155; padding:6px 9px; text-align:left; vertical-align:top; }
+th { background:#334155; }
+/* ---- 播放器 ---- */
+.controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+button { background:#334155; color:#e2e8f0; border:1px solid #475569; border-radius:8px; padding:8px 14px; font-size:14px; cursor:pointer; }
+button:hover { background:#475569; }
+button:disabled { opacity:0.4; cursor:default; }
+#btnPlay { background:#0e7490; border-color:#06b6d4; }
+#progress { color:#fbbf24; font-weight:bold; margin-left:6px; }
+#slider { flex:1; min-width:120px; -webkit-appearance:none; appearance:none; height:8px; border-radius:4px; background:#334155; outline:none; }
+#slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; border-radius:50%; background:#fbbf24; cursor:pointer; border:2px solid #0f172a; }
+#slider::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:#fbbf24; cursor:pointer; border:2px solid #0f172a; }
+.stage { display:flex; gap:12px; flex-wrap:wrap; }
+.panel { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:12px; flex:1; min-width:220px; }
+.panel-title { color:#94a3b8; font-size:13px; margin-bottom:8px; }
+#stackPanel { flex:2; min-width:300px; }
+#stackBox { display:flex; flex-direction:column; gap:6px; }
+.frame { background:#334155; border:2px solid #475569; border-radius:8px; padding:6px 10px; }
+.frame.top { border:3px solid #fbbf24; background:#3e4a63; }
+.fname { font-size:12px; color:#cbd5e1; margin-bottom:3px; font-weight:bold; }
+.frow { display:flex; gap:8px; flex-wrap:wrap; font-size:13.5px; }
+.fcell { padding:2px 8px; border-radius:6px; }
+.fcell.x { background:#1d4ed8; }
+.fcell.r { background:#b45309; }
+.fcell.o { background:#475569; }
+.addr { font-size:26px; } .addr b { color:#fbbf24; font-size:32px; }
+.hint { color:#94a3b8; font-size:12.5px; margin-top:4px; }
+.x { margin-top:8px; font-size:14px; }
+.chip { display:inline-block; background:#16a34a; color:#fff; border-radius:8px; padding:3px 10px; margin:2px; font-size:15px; font-weight:bold; }
+.outrow { font-size:14px; padding:2px 0; }
+.outrow.fresh { color:#fbbf24; font-weight:bold; }
+.empty { color:#64748b; }
+.actionbar { margin-top:12px; display:flex; gap:10px; align-items:center; background:#1e293b; border:1px solid #334155; border-radius:12px; padding:10px 14px; }
+.tag { color:#0b1120; font-weight:bold; border-radius:6px; padding:3px 10px; font-size:13px; white-space:nowrap; }
+#actText { font-size:15.5px; }
+</style>
+</head>
+<body>
+
+<h1>模拟栈实现组合型枚举 —— 交互式讲解</h1>
+<p class="sub">题源:《算法竞赛进阶指南》(AcWing 93 风格) · 演示参数 n=4, m=2 · 共 6 个组合</p>
+
+<h2>一、这个程序要干什么</h2>
+<p>从 1..n 里选 m 个数,输出<strong>所有组合</strong>。n=4, m=2 时输出 6 个:
+<code>3 4 / 2 4 / 2 3 / 1 4 / 1 3 / 1 2</code>(顺序由下面代码的"先不选后选"搜索决定)。</p>
+<p>核心思想:<strong>递归版 calc(x)</strong> 的每一次函数调用,都要系统帮它做三件事:
+<strong>① 存参数 ② 记返回到哪 ③ 保存现场</strong>。这段代码不用系统栈,而是用一个
+<code>stack[]</code> 数组和 <code>address</code> 变量,把这三件事<strong>手动做出来</strong>。</p>
+
+<div class="card">
+<h3>全局变量</h3>
+<table>
+<tr><td><code>vector&lt;int&gt; chosen</code></td><td>当前路径已选的数(一个组合的"半成品")</td></tr>
+<tr><td><code>int stack[100010]</code></td><td>手工"调用栈"。每个函数调用占 <b>3 个槽</b>:x 参数 / 返回地址 / 旧 top</td></tr>
+<tr><td><code>int top</code></td><td>栈顶指针(已用的槽数)</td></tr>
+<tr><td><code>int address</code></td><td><b>程序计数器</b>:当前函数执行到哪一步,取值只有 0 / 1 / 2</td></tr>
+<tr><td><code>int n, m</code></td><td>输入:从 n 个数里选 m 个</td></tr>
+</table>
+</div>
+
+<h2>二、逐函数讲解</h2>
+
+<div class="card">
+<h3>① call(x, ret_addr) —— 模拟"调用一个函数 calc(x)"</h3>
+<pre><code>void call(int x, int ret_addr) {
+    int old_top = top;        // 先记住"我现在栈顶在哪"
+    stack[++top] = x;         // 槽1:新一层的参数 x
+    stack[++top] = ret_addr;  // 槽2:返回地址(这层结束回到调用者时,address 该变成几)
+    stack[++top] = old_top;   // 槽3:旧 top(返程时靠它把整个帧弹掉)
+}</code></pre>
+<p>压入的 3 个槽 = 一个<b>函数帧</b>。例:<code>call(2, 1)</code> 表示"进入 calc(2),等它结束我就从 case 1 接着干",压出
+<b>(2, 1, 旧top)</b>。</p>
+</div>
+
+<div class="card">
+<h3>② ret() —— 模拟"函数 return"</h3>
+<pre><code>int ret() {
+    int ret_addr = stack[top - 1];  // 取我这个帧第 2 槽:返回地址
+    top = stack[top];               // 取第 3 槽:旧 top,整个帧被弹掉
+    return ret_addr;                // 告诉调用者:回去后该从 case 几继续
+}</code></pre>
+<p>所以<b>栈顶 3 槽的语义</b>永远是:<code>stack[top-2]</code>=当前参数,<code>stack[top-1]</code>=返回地址,
+<code>stack[top]</code>=旧 top。记住这句,整个循环全靠它。</p>
+</div>
+
+<div class="card">
+<h3>③ main —— 入口 + 调度器</h3>
+<pre><code>cin >> n >> m;
+call(1, 0);          // 手动发起第一次调用:进入 calc(1);返回地址 0(=回到 main,栈空即结束)
+while (top) {        // 调度器:栈不空 = 还有没结束的函数
+    int x = stack[top - 2];   // 取栈顶帧参数 = 现在执行到 calc(x)
+    switch (address) { ... }  // 按程序计数器分发到 case 0 / 1 / 2
+}</code></pre>
+<p>原来递归时由 CPU 自动完成的"取当前参数 + 决定执行到哪",这里<b>变成 while 循环里显式的三行</b>。</p>
+</div>
+
+<div class="card">
+<h3>④ case 0 —— "函数开头":剪枝 → 出口 → 不选分支</h3>
+<pre><code>case 0:
+    if (chosen.size()>m || chosen.size()+(n-x+1)<m) {
+        address = ret(); continue;      // 剪枝:这层白进了,直接 return(对应递归函数开头的 if)
+    }
+    if (x == n + 1) {                   // 数都看完了,chosen 就是一个完整组合
+        <输出 chosen>; puts("");
+        address = ret(); continue;      // 输出完 return
+    }
+    call(x+1, 1);                       // 不选 x,进入下一层;该层结束时回到 case 1
+    address = 0;  continue;             // ★ 新压入的帧永远从 case 0 开始干活
+}</code></pre>
+<p><b>两个 return 点、一个递归点</b>。剪枝条件:<code>chosen.size()&gt;m</code> 选超了;
+<code>chosen.size()+(n-x+1)&lt;m</code> 剩下的数全选也凑不够 m 个。例(x=4,已选 0 个):0+(4-4+1)=1 &lt; 2 → 剪!</p>
+<p><b>最精妙的一行</b>:<code>address = 0; continue;</code>。真递归里子函数结束会自动回到调用处;这里必须手动把
+address 归 0,让 while 重新取栈顶(<b>新帧</b>)的参数。</p>
+</div>
+
+<div class="card">
+<h3>⑤ case 1 —— "从不选分支回来了":选 x,再往下</h3>
+<pre><code>case 1:
+    chosen.push_back(x);   // 执行"这一步该选 x"的动作
+    call(x+1, 2);          // 选完继续下一层;该层结束时回到 case 2
+    address = 0;  continue;
+}</code></pre>
+</div>
+
+<div class="card">
+<h3>⑥ case 2 —— "从选分支回来了"(或本层干完):撤销并返回</h3>
+<pre><code>case 2:
+    chosen.pop_back();     // 撤销刚才选的 x(回溯)
+    address = ret();       // 本层彻底结束,接管调用者存的返回地址(0/1/2 都可能!)
+}</code></pre>
+<p>注意 case 2 不写 continue:switch 后面就是 while 循环体末尾,自然回到 while 开头。而
+<code>address = ret()</code> 的返回值<b>由调用者决定</b>——被 case0 调进来→回 1;被 case1 调进来→回 2;
+被 main 调进来→回 0(栈空,整个程序结束)。</p>
+</div>
+
+<div class="card">
+<h3>⑦ 递归 ↔ 模拟栈 对照表(理解后这张表就够了)</h3>
+<table>
+<tr><th>递归 calc(x) 里的动作</th><th>模拟栈版本</th></tr>
+<tr><td>函数入口</td><td>case 0</td></tr>
+<tr><td>开头的剪枝 return</td><td>case 0: <code>address=ret(); continue;</code></td></tr>
+<tr><td>x==n+1 输出后 return</td><td>case 0: 输出后 <code>address=ret(); continue;</code></td></tr>
+<tr><td>calc(x+1) —— 不选分支</td><td>case 0: <code>call(x+1, 1); address=0;</code></td></tr>
+<tr><td>push_back(x) —— 选 x</td><td>case 1</td></tr>
+<tr><td>calc(x+1) —— 选完再往后</td><td>case 1: <code>call(x+1, 2); address=0;</code></td></tr>
+<tr><td>pop_back() 后 return</td><td>case 2: <code>pop_back(); address=ret();</code></td></tr>
+</table>
+<p><b>一句话总结</b>:3 个 return/递归点正好对应 3 个 case,address 只可能是 0/1/2;
+每一个"函数调用"= 栈里 3 个槽;整个 while 循环就是把"递归调度"摊平。</p>
+</div>
+
+<h2>三、逐步演示(下面)</h2>
+<p>对照上面的表,用"下一步"一帧帧看。重点盯三处联动:
+<b>栈(左上)</b>什么时候多一帧 / 少一帧; <b>address(右上)</b>为什么跳; <b>chosen(中间)</b>为什么进/出。</p>
+
+
+<div class="card" id="player">
+<h2>第四部分:逐步演示(点"下一步"自己控制) </h2>
+<div class="controls">
+  <button id="btnPrev" onclick="step(-1)">◀ 上一步</button>
+  <button id="btnNext" onclick="step(1)">下一步 ▶</button>
+  <button id="btnPlay" onclick="togglePlay()">▶ 自动播放</button>
+  <span id="progress">第 1 步</span>
+  <input type="range" id="slider" min="0" value="0" oninput="jump(this.value)">
+</div>
+
+<div class="stage">
+  <!-- 左:栈 -->
+  <div class="panel" id="stackPanel">
+    <div class="panel-title">模拟栈 stack[] (顶在上 · 底在下) <span id="topInfo"></span></div>
+    <div id="stackBox"></div>
+  </div>
+  <!-- 右:状态 -->
+  <div class="col">
+    <div class="panel">
+      <div class="panel-title">当前状态</div>
+      <div id="addrBox" class="addr"></div>
+      <div id="caseHint" class="hint"></div>
+      <div id="xBox" class="x"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">chosen 当前已选</div>
+      <div id="chosenBox"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">已输出组合 (<span id="outCount">0</span> / 6)</div>
+      <div id="outBox"></div>
+    </div>
+  </div>
+</div>
+
+<div class="actionbar">
+  <span id="kindTag" class="tag"></span>
+  <span id="actText"></span>
+</div>
+</div>
+<script>
+// 步骤数据内嵌
+const STEPS_DATA = [{"desc": "main: call(1,0) —— 压入初始帧 calc(1),从 case 0 开始", "kind": "call", "address": 0, "chosen": [], "outputs": [], "stack": [1, 0, 0], "top": 3, "x": 1, "extra": ""}, {"desc": "case 0 · 不选 1 → call(2,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [], "outputs": [], "stack": [1, 0, 0, 2, 1, 3], "top": 6, "x": 2, "extra": ""}, {"desc": "case 0 · 不选 2 → call(3,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [], "outputs": [], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 0 · 不选 3 → call(4,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [], "outputs": [], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 剪枝: x=4 这层白进了 → 弹栈,address=ret()=1", "kind": "prune", "address": 1, "chosen": [], "outputs": [], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 1 · 选 3: chosen 加入 3 → call(4,2) 压帧", "kind": "push", "address": 0, "chosen": [3], "outputs": [], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 不选 4 → call(5,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [3], "outputs": [], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6, 4, 2, 9, 5, 1, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · 剪枝: x=5 这层白进了 → 弹栈,address=ret()=1", "kind": "prune", "address": 1, "chosen": [3], "outputs": [], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 1 · 选 4: chosen 加入 4 → call(5,2) 压帧", "kind": "push", "address": 0, "chosen": [3, 4], "outputs": [], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6, 4, 2, 9, 5, 2, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · x=5=n+1 → 输出 [3, 4] → 弹栈,address=ret()=2", "kind": "output", "address": 2, "chosen": [3, 4], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 2 · 撤销 4: chosen 移除 4 → 弹栈,address=ret()=2", "kind": "pop", "address": 2, "chosen": [3], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 1, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 2 · 撤销 3: chosen 移除 3 → 弹栈,address=ret()=1", "kind": "pop", "address": 1, "chosen": [], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3], "top": 6, "x": 2, "extra": ""}, {"desc": "case 1 · 选 2: chosen 加入 2 → call(3,2) 压帧", "kind": "push", "address": 0, "chosen": [2], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 0 · 不选 3 → call(4,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [2], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 不选 4 → call(5,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [2], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 1, 9, 5, 1, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · 剪枝: x=5 这层白进了 → 弹栈,address=ret()=1", "kind": "prune", "address": 1, "chosen": [2], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 1 · 选 4: chosen 加入 4 → call(5,2) 压帧", "kind": "push", "address": 0, "chosen": [2, 4], "outputs": [[3, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 1, 9, 5, 2, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · x=5=n+1 → 输出 [2, 4] → 弹栈,address=ret()=2", "kind": "output", "address": 2, "chosen": [2, 4], "outputs": [[3, 4], [2, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 2 · 撤销 4: chosen 移除 4 → 弹栈,address=ret()=1", "kind": "pop", "address": 1, "chosen": [2], "outputs": [[3, 4], [2, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 1 · 选 3: chosen 加入 3 → call(4,2) 压帧", "kind": "push", "address": 0, "chosen": [2, 3], "outputs": [[3, 4], [2, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 不选 4 → call(5,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [2, 3], "outputs": [[3, 4], [2, 4]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 2, 9, 5, 1, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · x=5=n+1 → 输出 [2, 3] → 弹栈,address=ret()=1", "kind": "output", "address": 1, "chosen": [2, 3], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 1 · 选 4: chosen 加入 4 → call(5,2) 压帧", "kind": "push", "address": 0, "chosen": [2, 3, 4], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 2, 9, 5, 2, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · 剪枝: x=5 这层白进了 → 弹栈,address=ret()=2", "kind": "prune", "address": 2, "chosen": [2, 3, 4], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 2 · 撤销 4: chosen 移除 4 → 弹栈,address=ret()=2", "kind": "pop", "address": 2, "chosen": [2, 3], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 1, 3, 3, 2, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 2 · 撤销 3: chosen 移除 3 → 弹栈,address=ret()=2", "kind": "pop", "address": 2, "chosen": [2], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 1, 3], "top": 6, "x": 2, "extra": ""}, {"desc": "case 2 · 撤销 2: chosen 移除 2 → 弹栈,address=ret()=1", "kind": "pop", "address": 1, "chosen": [], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0], "top": 3, "x": 1, "extra": ""}, {"desc": "case 1 · 选 1: chosen 加入 1 → call(2,2) 压帧", "kind": "push", "address": 0, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 2, 3], "top": 6, "x": 2, "extra": ""}, {"desc": "case 0 · 不选 2 → call(3,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 0 · 不选 3 → call(4,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 不选 4 → call(5,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 1, 9, 5, 1, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · 剪枝: x=5 这层白进了 → 弹栈,address=ret()=1", "kind": "prune", "address": 1, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 1 · 选 4: chosen 加入 4 → call(5,2) 压帧", "kind": "push", "address": 0, "chosen": [1, 4], "outputs": [[3, 4], [2, 4], [2, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 1, 9, 5, 2, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · x=5=n+1 → 输出 [1, 4] → 弹栈,address=ret()=2", "kind": "output", "address": 2, "chosen": [1, 4], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 2 · 撤销 4: chosen 移除 4 → 弹栈,address=ret()=1", "kind": "pop", "address": 1, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 1 · 选 3: chosen 加入 3 → call(4,2) 压帧", "kind": "push", "address": 0, "chosen": [1, 3], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 不选 4 → call(5,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [1, 3], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 2, 9, 5, 1, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · x=5=n+1 → 输出 [1, 3] → 弹栈,address=ret()=1", "kind": "output", "address": 1, "chosen": [1, 3], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 1 · 选 4: chosen 加入 4 → call(5,2) 压帧", "kind": "push", "address": 0, "chosen": [1, 3, 4], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 2, 9, 5, 2, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · 剪枝: x=5 这层白进了 → 弹栈,address=ret()=2", "kind": "prune", "address": 2, "chosen": [1, 3, 4], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 2 · 撤销 4: chosen 移除 4 → 弹栈,address=ret()=2", "kind": "pop", "address": 2, "chosen": [1, 3], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 1, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 2 · 撤销 3: chosen 移除 3 → 弹栈,address=ret()=1", "kind": "pop", "address": 1, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3], "top": 6, "x": 2, "extra": ""}, {"desc": "case 1 · 选 2: chosen 加入 2 → call(3,2) 压帧", "kind": "push", "address": 0, "chosen": [1, 2], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 0 · 不选 3 → call(4,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [1, 2], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 不选 4 → call(5,1) 压帧,新层从 case 0 开始", "kind": "call", "address": 0, "chosen": [1, 2], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6, 4, 1, 9, 5, 1, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · x=5=n+1 → 输出 [1, 2] → 弹栈,address=ret()=1", "kind": "output", "address": 1, "chosen": [1, 2], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 1 · 选 4: chosen 加入 4 → call(5,2) 压帧", "kind": "push", "address": 0, "chosen": [1, 2, 4], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6, 4, 1, 9, 5, 2, 12], "top": 15, "x": 5, "extra": ""}, {"desc": "case 0 · 剪枝: x=5 这层白进了 → 弹栈,address=ret()=2", "kind": "prune", "address": 2, "chosen": [1, 2, 4], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6, 4, 1, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 2 · 撤销 4: chosen 移除 4 → 弹栈,address=ret()=1", "kind": "pop", "address": 1, "chosen": [1, 2], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 1 · 选 3: chosen 加入 3 → call(4,2) 压帧", "kind": "push", "address": 0, "chosen": [1, 2, 3], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6, 4, 2, 9], "top": 12, "x": 4, "extra": ""}, {"desc": "case 0 · 剪枝: x=4 这层白进了 → 弹栈,address=ret()=2", "kind": "prune", "address": 2, "chosen": [1, 2, 3], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0, 2, 2, 3, 3, 2, 6], "top": 9, "x": 3, "extra": ""}, {"desc": "case 2 · 撤销 3: chosen 移除 3 → 弹栈,address=ret()=2", "kind": "pop", "address": 2, "chosen": [1, 2], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0, 2, 2, 3], "top": 6, "x": 2, "extra": ""}, {"desc": "case 2 · 撤销 2: chosen 移除 2 → 弹栈,address=ret()=2", "kind": "pop", "address": 2, "chosen": [1], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [1, 0, 0], "top": 3, "x": 1, "extra": ""}, {"desc": "case 2 · 撤销 1: chosen 移除 1 → 弹栈,address=ret()=0", "kind": "pop", "address": 0, "chosen": [], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [], "top": 0, "x": null, "extra": ""}, {"desc": "栈空,枚举结束!共输出 6 个组合", "kind": "done", "address": 0, "chosen": [], "outputs": [[3, 4], [2, 4], [2, 3], [1, 4], [1, 3], [1, 2]], "stack": [], "top": 0, "x": null, "extra": ""}];
+const KIND_COLOR = {
+  call:   ["#3b82f6", "CALL 调用入栈"],
+  push:   ["#22c55e", "PUSH 选数"],
+  pop:    ["#a855f7", "POP 回溯"],
+  ret:    ["#f59e0b", "RET 返回"],
+  prune:  ["#ef4444", "PRUNE 剪枝"],
+  output: ["#fbbf24", "OUTPUT 输出"],
+  done:   ["#22c55e", "DONE 完成"]
+};
+// 归一化 desc(x 标号从 N+1 显示为 n+1)
+function niceDesc(d) {
+  return d
+    .replace(/x=n\+1/g, "x=n+1")
+    .replace(/call\((\d+), (\d+)\)/g, "call($1, $2)")
+    .replace(/chosen={(\d+)}>m/g, "chosen=$1>m");
+}
+let cur = 0;
+document.getElementById("slider").max = STEPS_DATA.length - 1;
+
+function framesOf(stackArr) {
+  const f = [];
+  for (let i = 0; i < stackArr.length; i += 3) f.push([stackArr[i], stackArr[i+1], stackArr[i+2]]);
+  return f.reverse(); // 顶在上
+}
+
+function render() {
+  const s = STEPS_DATA[cur];
+  const [color, tag] = KIND_COLOR[s.kind] || ["#94a3b8", s.kind];
+  // 动作条
+  const tagEl = document.getElementById("kindTag");
+  tagEl.textContent = tag;
+  tagEl.style.background = color;
+  document.getElementById("actText").textContent = niceDesc(s.desc);
+  // 进度
+  document.getElementById("progress").textContent = `第 ${cur+1} / ${STEPS_DATA.length} 步`;
+  document.getElementById("slider").value = cur;
+  // 栈
+  const frames = framesOf(s.stack);
+  const box = document.getElementById("stackBox");
+  box.innerHTML = "";
+  if (frames.length === 0) {
+    box.innerHTML = '<div class="empty">栈空</div>';
+  } else {
+    frames.forEach((f, idx) => {
+      const isTop = idx === 0; // 反转后第一个是栈顶
+      const div = document.createElement("div");
+      div.className = "frame" + (isTop ? " top" : "");
+      div.innerHTML = `<div class="fname">calc(${f[0]}) 帧${isTop ? " · 栈顶(正在执行)" : ""}</div>
+        <div class="frow"><span class="fcell x">参数 x = ${f[0]}</span><span class="fcell r">返回 → case ${f[1]}</span><span class="fcell o">旧 top = ${f[2]}</span></div>`;
+      box.appendChild(div);
+    });
+  }
+  document.getElementById("topInfo").textContent = "top = " + s.top;
+  // 状态
+  const av = s.address;
+  document.getElementById("addrBox").innerHTML = `address = <b>${av}</b>`;
+  const hints = {0: "case 0: 函数开头 → 剪枝/输出/不选分支", 1: "case 1: push_back(x) 选 x", 2: "case 2: pop_back() 撤销并返回"};
+  document.getElementById("caseHint").textContent = hints[av] || "";
+  document.getElementById("xBox").innerHTML = `当前参数 x = <b>${s.x}</b>`;
+  // chosen
+  const cb = document.getElementById("chosenBox");
+  cb.innerHTML = "";
+  if (s.chosen.length === 0) cb.textContent = "空 (empty)";
+  else s.chosen.forEach(v => { const d = document.createElement("span"); d.className = "chip"; d.textContent = v; cb.appendChild(d); });
+  // 输出
+  document.getElementById("outCount").textContent = s.outputs.length;
+  const ob = document.getElementById("outBox");
+  ob.innerHTML = "";
+  s.outputs.forEach((o, i) => {
+    const d = document.createElement("div");
+    const isNew = s.kind === "output" && i === s.outputs.length - 1;
+    d.className = "outrow" + (isNew ? " fresh" : "");
+    d.textContent = (i+1) + ".  " + o.join(" ");
+    if (isNew) d.textContent += "  ◀ 刚输出";
+    ob.appendChild(d);
+  });
+  document.getElementById("btnPrev").disabled = cur === 0;
+  document.getElementById("btnNext").disabled = cur === STEPS_DATA.length - 1;
+}
+
+function step(d) {
+  const n = cur + d;
+  if (n < 0 || n >= STEPS_DATA.length) return;
+  cur = n; render();
+}
+function jump(v) { cur = Number(v); render(); }
+
+let timer = null;
+function togglePlay() {
+  const btn = document.getElementById("btnPlay");
+  const played = btn.textContent.includes("暂停");
+  if (played) { clearInterval(timer); timer = null; btn.textContent = "▶ 自动播放"; }
+  else {
+    btn.textContent = "⏸ 暂停";
+    timer = setInterval(() => {
+      if (cur >= STEPS_DATA.length - 1) { clearInterval(timer); timer = null; btn.textContent = "▶ 自动播放"; return; }
+      step(1);
+    }, 1300);
+  }
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") step(1);
+  if (e.key === "ArrowLeft") step(-1);
+});
+render();
+</script>
+
+</body>
+</html>
