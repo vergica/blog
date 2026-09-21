@@ -2,7 +2,7 @@
 title: "关于短片的创作构思"
 date: 2026-08-30T13:30:00+08:00
 draft: false
-tags: ["创作", "短片", "哲学"]
+tags: ["创作"]
 categories: ["随手记"]
 math: false
 ---

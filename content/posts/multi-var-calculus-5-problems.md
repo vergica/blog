@@ -2,7 +2,7 @@
 title: "多元函数微分学五题精讲"
 date: 2026-08-09T20:00:00+08:00
 draft: false
-tags: ["数学", "高数"]
+tags: ["数学"]
 categories: ["学习笔记"]
 math: true
 ---

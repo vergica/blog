@@ -2,7 +2,7 @@
 title: "服务器与我的 AI 助手：从零搭建到多模态全配置"
 date: 2026-08-17T15:30:00+08:00
 draft: false
-tags: ["技术", "服务器", "AI"]
+tags: ["技术", "AI"]
 categories: ["折腾记录"]
 math: false
 ---
