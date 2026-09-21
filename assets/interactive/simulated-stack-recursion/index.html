@@ -209,13 +209,10 @@ address 归 0,让 while 重新取栈顶(<b>新帧</b>)的参数。</p>
 每一个"函数调用"= 栈里 3 个槽;整个 while 循环就是把"递归调度"摊平。</p>
 </div>
 
-<h2>三、逐步演示(下面)</h2>
-<p>对照上面的表,用"下一步"一帧帧看。重点盯三处联动:
-<b>栈(左上)</b>什么时候多一帧 / 少一帧; <b>address(右上)</b>为什么跳; <b>chosen(中间)</b>为什么进/出。</p>
 
 
 <div class="card" id="player">
-<h2>第四部分:逐步演示(点"下一步"自己控制) </h2>
+<h2>三、逐步演示</h2>
 <div class="controls">
   <button id="btnPrev" onclick="step(-1)">◀ 上一步</button>
   <button id="btnNext" onclick="step(1)">下一步 ▶</button>
