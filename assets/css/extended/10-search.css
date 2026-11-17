@@ -1,0 +1,26 @@
+#searchResults li {
+  display: block;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+}
+#searchResults li .search-title {
+  display: block;
+  font-weight: 650;
+  font-size: 1.06rem;
+  line-height: 1.5;
+  color: var(--primary);
+}
+#searchResults li .search-snippet {
+  margin-top: 5px;
+  font-size: .9rem;
+  line-height: 1.75;
+  color: var(--secondary);
+}
+#searchResults li .search-snippet mark {
+  background: transparent;
+  color: var(--primary);
+  font-weight: 650;
+  border-bottom: 2px solid var(--primary);
+}
+#searchResults li .entry-link { display: none; }
+#searchResults li { cursor: pointer; }

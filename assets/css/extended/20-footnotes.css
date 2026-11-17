@@ -1,0 +1,8 @@
+/* Keep native footnote links and raised numbering, with bracketed labels. */
+.post-content .footnote-ref::before {
+  content: "[";
+}
+
+.post-content .footnote-ref::after {
+  content: "]";
+}

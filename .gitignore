@@ -6,3 +6,10 @@ public/
 
 # OS files
 .DS_Store
+
+# Generated locally or by GitHub Actions
+/public/
+/resources/
+/.hugo_build.lock
+.env
+.env.*

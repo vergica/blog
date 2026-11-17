@@ -9,6 +9,7 @@ buildFuture: false
 buildExpired: false
 paginate: 10
 hasCJKLanguage: true
+timeZone: "Asia/Shanghai"
 
 minify:
   disableXML: true
@@ -33,12 +34,15 @@ params:
   disableSpecial1stPost: false
   displayFullLangName: true
   comments: false
+  footer:
+    hideCopyright: false
+    text: '[沪ICP备2026021019号-1](https://beian.miit.gov.cn/) ｜ <a href="https://beian.mps.gov.cn/#/query/webSearch?code=31011502406270" rel="noreferrer" target="_blank" style="display:inline-flex;align-items:center;gap:4px;vertical-align:middle"><img src="/images/beian-gongan.png" alt="公安备案" style="height:16px;width:auto;display:inline-block;margin:0">沪公网安备31011502406270号</a>'
   images: ["images/og-image.png"]
 
   profileMode:
     enabled: true
     title: "梅岭随记"
-    subtitle: "温一壶月光下酒 🍶"
+    subtitle: "温一壶月光下酒 ✒️"
     imageUrl: ""
     imageWidth: 120
     imageHeight: 120
