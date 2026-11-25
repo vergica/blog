@@ -60,7 +60,7 @@ params:
 
   assets:
     disableHLJS: true
-    disableFingerprinting: false
+    disableFingerprinting: true
 
   label:
     text: "梅岭随记"
