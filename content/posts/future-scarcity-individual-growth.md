@@ -79,7 +79,7 @@ ShowToc: true
 
 于是，我便从“稀缺性”出发来寻找答案——在这个人工智能时代，什么会成为未来最稀缺的东西。经过几小时的认真思考，文章正文就在GPT和Gemini的辅助下写成了。
 
-回到最初的问题：如果要寻找一份既有前景又有意义的事业，我该何去何从？或许，我应去探索脑机接口、神经工程与人工智能结合的方向，尝试突破人类自身的生理限制吧。
+回到最初的问题：如果要寻找一份既有前景又有意义的事业，我该何去何从？或许，我应去探索脑机接口、神经工程与人工智能结合的方向，去突破人类自身的生理限制。
 
 [^bloom]: Benjamin S. Bloom（1984），[The 2 Sigma Problem: The Search for Methods of Group Instruction as Effective as One-to-One Tutoring](https://gwern.net/doc/psychology/1984-bloom.pdf)，*Educational Researcher*, 13(6), 4–16。文中报告的约两个标准差，是所述教学实验中辅导组相对于常规教学组的测验差异。
 
